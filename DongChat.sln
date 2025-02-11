@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35506.116 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "DongChat\Common.csproj", "{EC610932-2B73-4012-829F-4F769C28082B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{6A5BF044-2FEB-4009-BCE0-4BE436DFD43B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{2175669F-44A8-46BF-B0BD-FDB0C8C22B2F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC610932-2B73-4012-829F-4F769C28082B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC610932-2B73-4012-829F-4F769C28082B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC610932-2B73-4012-829F-4F769C28082B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC610932-2B73-4012-829F-4F769C28082B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A5BF044-2FEB-4009-BCE0-4BE436DFD43B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A5BF044-2FEB-4009-BCE0-4BE436DFD43B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A5BF044-2FEB-4009-BCE0-4BE436DFD43B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A5BF044-2FEB-4009-BCE0-4BE436DFD43B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2175669F-44A8-46BF-B0BD-FDB0C8C22B2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2175669F-44A8-46BF-B0BD-FDB0C8C22B2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2175669F-44A8-46BF-B0BD-FDB0C8C22B2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2175669F-44A8-46BF-B0BD-FDB0C8C22B2F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
