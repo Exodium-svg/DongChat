@@ -26,7 +26,7 @@ namespace Common.Utils
             this.cData = cVar;
         }
     }
-    public sealed class Env
+    public sealed class CVars
     {
         readonly ConcurrentDictionary<string, CVar> _cVars = new();
         private void LoadVariables(byte[] cVarData)
@@ -58,7 +58,8 @@ namespace Common.Utils
             }
         }
 
-        public Env(ReadOnlyMemory<byte> cVarData)
+        public CVars() {}
+        public CVars(ReadOnlyMemory<byte> cVarData)
         {
             if(!MemoryMarshal.TryGetArray(cVarData, out ArraySegment<byte> segment))
                 segment = new ArraySegment<byte>(cVarData.ToArray());
@@ -66,7 +67,7 @@ namespace Common.Utils
             LoadVariables(segment.Array!);
         }
 
-        public Env(string path) => LoadVariables(File.ReadAllBytes(path));
+        public CVars(string path) => LoadVariables(File.ReadAllBytes(path));
         public void SetVar(string key, CVar cVar) => _cVars[key] = cVar;
         public string GetString(string key, string fallback)
         {
@@ -80,7 +81,7 @@ namespace Common.Utils
             if (!_cVars.TryGetValue(key, out CVar cVar))
                 return fallback;
 
-            switch(cVar.cType)
+            switch (cVar.cType)
             {
                 case CVarType.Byte:
                     if (typeof(T) != typeof(byte))
@@ -132,7 +133,7 @@ namespace Common.Utils
         {
             using FileStream fs = File.OpenWrite(output);
 
-            fs.WriteString("EnvironmentVar");
+            fs.WriteString("CVars");
             fs.Write(_cVars.Count);
 
             foreach(KeyValuePair<string, CVar> cVarPair in  _cVars)

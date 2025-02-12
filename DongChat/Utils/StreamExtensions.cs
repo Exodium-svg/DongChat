@@ -37,5 +37,11 @@ namespace Common.Utils
             stream.Write<int>(strBytes.Length);
             stream.Write(strBytes);
         }
+
+        public static void WritePrefixBytes(this Stream stream, ReadOnlySpan<byte> bytes)
+        {
+            stream.Write<int>(bytes.Length);
+            stream.Write(bytes);
+        }
     }
 }
