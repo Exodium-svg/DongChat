@@ -1,4 +1,5 @@
 ﻿using Common.Network.Packets;
+using Common.Network.Packets.ClientBound;
 using Common.Utils;
 using System.Collections.Concurrent;
 using System.Net;
@@ -13,6 +14,8 @@ namespace Common.Network.ServerNet
 #pragma warning disable CS8618 // Justification: no way around it.
         public static Server Instance { get; private set; }
 #pragma warning restore CS8618
+        const int VERSION = 0;
+
         readonly ClientListener _listener;
         readonly CVars _cVars;
         readonly ConcurrentDictionary<PacketType, Action<User, ReadOnlyMemory<byte>>> _routes = new();
@@ -32,6 +35,7 @@ namespace Common.Network.ServerNet
         private void ClientConnected(object? sender, ClientConnectedEventArgs e)
         {
             User user = new User(e.RemoteSocket);
+            user.Send(PacketType.VersionPayload, new VersionPayload(VERSION).Bytes);
 
             user.MessageReceived += MessageReceived;
         }

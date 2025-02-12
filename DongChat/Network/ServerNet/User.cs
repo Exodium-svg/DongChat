@@ -26,6 +26,7 @@ namespace Common.Network.ServerNet
         readonly CVars _cVarsSession = new();
         public string Address { get => _remoteSocket.RemoteEndPoint!.ToString()!; }
         public Stream Stream { get => _remoteStream; }
+        public CVars CVars => _cVarsSession;
         public event EventHandler<MessageReceivedEventArgs>? MessageReceived;
         public User(Socket remoteSocket)
         {
@@ -35,7 +36,10 @@ namespace Common.Network.ServerNet
 
         public void Send(PacketType type, ReadOnlyMemory<byte> buffer)
         {
-            Header header = new Header(buffer.Length, type, 0, 0);
+            if (!_remoteSocket.Connected)
+                return;
+
+            Header header = new Header(buffer.Length, type, 0);
 
             int totalSize = header.Size + Marshal.SizeOf(header);
 
@@ -44,7 +48,11 @@ namespace Common.Network.ServerNet
 
             buffer.Span.CopyTo(packetBuffer.Slice(Marshal.SizeOf(header), buffer.Length));
 
-            _remoteSocket.Send(packetBuffer);
+            lock (_remoteSocket)
+            {
+                try { _remoteSocket.Send(packetBuffer); }
+                catch (SocketException) { _remoteSocket.Close(); }
+            }
         }
 
         public void Close()
