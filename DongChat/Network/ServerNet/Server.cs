@@ -1,4 +1,6 @@
-﻿using Common.Utils;
+﻿using Common.Network.Packets;
+using Common.Utils;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -13,7 +15,8 @@ namespace Common.Network.ServerNet
 #pragma warning restore CS8618
         readonly ClientListener _listener;
         readonly CVars _cVars;
-        
+        readonly ConcurrentDictionary<PacketType, Action<User, ReadOnlyMemory<byte>>> _routes = new();
+        readonly ConcurrentDictionary<PacketType, MiddleWare> _middlewares = new();
         public Server()
         {
             _cVars = new CVars("cVars");
@@ -24,72 +27,37 @@ namespace Common.Network.ServerNet
 
             Instance = this;
         }
-
+        ~Server() => _cVars.Save("cVars");
+        public void RegisterRoute(PacketType packetType, Action<User, ReadOnlyMemory<byte>> route) => _routes[packetType] = route;
         private void ClientConnected(object? sender, ClientConnectedEventArgs e)
         {
-            TcpClient client = e.Client;
+            User user = new User(e.RemoteSocket);
 
-            SocketAsyncEventArgs sockEvent = new();
-            sockEvent.SetBuffer(new Memory<byte>(new byte[Marshal.SizeOf<Header>()]));
-            sockEvent.UserToken = client;
-            sockEvent.Completed += OnMessage;
-
-            client.Client.ReceiveAsync(sockEvent);
+            user.MessageReceived += MessageReceived;
         }
 
-        private void OnMessage(object? sender, SocketAsyncEventArgs e)
+        private void MessageReceived(object? sender, MessageReceivedEventArgs e)
         {
-            TcpClient client = (TcpClient)e.UserToken!; // we always fill it
+            User? user = sender as User;
+
+            if (user == null)
+                return;
+
+            // middleware?
+            if(_middlewares.TryGetValue(e.Header.Type, out MiddleWare? middleware))
+            {
+                // Send a error message if fails and do nothing.
+            }
+
+            // Send result to client
+            Result result = Process(user, e.Header.Type, e.Data);
             
-            if(e.BytesTransferred < Marshal.SizeOf<Header>() && e.SocketError != SocketError.Success)
-            {
+        }
 
-                // something went wrong? --> check for errors
-                client.Close();
-                return;
-            }
-
-            // Might not function correctly on arm devices...
-            //Header header;
-
-            //unsafe
-            //{
-            //    fixed(byte* pBuff = e.MemoryBuffer.Span)
-            //        header = *(Header*)pBuff;
-            //}
+        public Result Process(User user, PacketType type, ReadOnlyMemory<byte> buffer)
+        {
             
-            Header header = Unsafe.ReadUnaligned<Header>(ref MemoryMarshal.GetReference(e.MemoryBuffer.Span));
-
-
-            if(header.Size > ushort.MaxValue) // Not acceptable!
-            {
-                client.Close();
-                return;
-            }
-
-            Span<byte> buffer = header.Size > 1024 ? new byte[header.Size] : stackalloc byte[header.Size];
-
-            try
-            {
-                client.GetStream().ReadExactly(buffer);
-            } catch (EndOfStreamException)
-            {
-                client.Close();
-                return;
-            }
-
-
-            Process(client, header.Type, buffer);
-
-            OnMessage(sender, e);
-        }
-        public void Process(TcpClient client, PacketType type, scoped Span<byte> buffer)
-        {
-
-        }
-        ~Server()
-        {
-            _cVars.Save("cVars");
+            return Result.Success;
         }
     }
 }

@@ -6,20 +6,15 @@ namespace Common.Network.ServerNet
 {
     public class ClientConnectedEventArgs : EventArgs
     {
-        public TcpClient Client { get; set; }
+        public required Socket RemoteSocket { get; init; }
     }
     public class ClientListener
     {
         readonly TcpListener _listener;
         readonly Thread _listenThread;
         public event EventHandler<ClientConnectedEventArgs> ClientConnected;
-        CvarPayload cVarPayload;
         public ClientListener(IPAddress address, int port)
         {
-            if (File.Exists("clientCvars"))
-                cVarPayload = new CvarPayload(new ReadOnlyMemory<byte>(File.ReadAllBytes("clientCvars")));
-            else
-                cVarPayload = new CvarPayload(new ReadOnlyMemory<byte>(Array.Empty<byte>()));
             _listener = new TcpListener(address, port);
 
             _listener.Start();
@@ -33,24 +28,26 @@ namespace Common.Network.ServerNet
         {
             while (true)
             {
+                Socket? remoteSocket = null;
                 try
                 {
-                    TcpClient client = await _listener.AcceptTcpClientAsync();
+                    remoteSocket = await _listener.AcceptSocketAsync();
 
-                    if (client.Connected)
-                        client.GetStream().Write(cVarPayload.Bytes);
-                    else
+                    if(!remoteSocket.Connected)
                     {
-                        client.Close();
+                        remoteSocket.Close();
                         continue;
                     }
 
-                    ClientConnected.Invoke(null, new ClientConnectedEventArgs() { Client = client});
+
+                    ClientConnected.Invoke(this, new ClientConnectedEventArgs() { RemoteSocket = remoteSocket});
+                    continue;
                 } 
-                catch(IndexOutOfRangeException) { continue; }
-                catch(SocketException) { continue; }
+                catch(IndexOutOfRangeException) { }
+                catch(SocketException) { }
+
+                remoteSocket?.Close();
             }
-            cVarPayload.Dispose();
         }
     }
 }

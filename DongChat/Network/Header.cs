@@ -21,6 +21,7 @@ namespace Common.Network
             _size = size;
             _type = (int)type;
             _flags = flags;
+            // If responseID is not zero it should be known that 
             _responseId = responseId;
         }
 

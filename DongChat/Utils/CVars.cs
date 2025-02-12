@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Common.Utils
@@ -129,53 +130,63 @@ namespace Common.Utils
 
             return (T)cVar.cData;
         }
-        public void Save(string output)
+        public void WriteToStream(Stream stream)
         {
-            using FileStream fs = File.OpenWrite(output);
+            stream.WriteString("Official CVars"); // TODO: turn into a certificate that can only be read using a public key;
+            stream.Write(_cVars.Count);
 
-            fs.WriteString("CVars");
-            fs.Write(_cVars.Count);
-
-            foreach(KeyValuePair<string, CVar> cVarPair in  _cVars)
+            foreach (KeyValuePair<string, CVar> cVarPair in _cVars)
             {
                 CVar cVar = cVarPair.Value;
-                fs.WriteByte((byte)cVar.cType);
-                fs.WriteString(cVarPair.Key);
-                
-                switch(cVar.cType)
+                stream.WriteByte((byte)cVar.cType);
+                stream.WriteString(cVarPair.Key);
+
+                switch (cVar.cType)
                 {
                     case CVarType.Byte:
-                        fs.Write((byte)cVar.cData);
+                        stream.Write((byte)cVar.cData);
                         break;
                     case CVarType.Char:
-                        fs.Write((ushort)(char)cVar.cData); // Cast `char` to `ushort` (since .NET `char` is 2 bytes)
+                        stream.Write((ushort)(char)cVar.cData); // Cast `char` to `ushort` (since .NET `char` is 2 bytes)
                         break;
                     case CVarType.Int16:
-                        fs.Write((short)cVar.cData);
+                        stream.Write((short)cVar.cData);
                         break;
                     case CVarType.UInt16:
-                        fs.Write((ushort)cVar.cData);
+                        stream.Write((ushort)cVar.cData);
                         break;
                     case CVarType.Int32:
-                        fs.Write((int)cVar.cData);
+                        stream.Write((int)cVar.cData);
                         break;
                     case CVarType.UInt32:
-                        fs.Write((uint)cVar.cData);
+                        stream.Write((uint)cVar.cData);
                         break;
                     case CVarType.Int64:
-                        fs.Write((long)cVar.cData);
+                        stream.Write((long)cVar.cData);
                         break;
                     case CVarType.UInt64:
-                        fs.Write((ulong)cVar.cData);
+                        stream.Write((ulong)cVar.cData);
                         break;
                     case CVarType.String:
-                        fs.WriteString((string)cVar.cData);
-                    break;
+                        stream.WriteString((string)cVar.cData);
+                        break;
                     default:
                         throw new InvalidDataException($"Unsupported CVarType: {cVar.cType}");
                 }
             }
+        }
+        public byte[] ToArray()
+        {
+            using MemoryStream memoryStream = new MemoryStream();
 
+            WriteToStream(memoryStream);
+            return memoryStream.ToArray();
+        }
+        public void Save(string output)
+        {
+            using FileStream fs = File.OpenWrite(output);
+
+            WriteToStream(fs);
             fs.Close();
         }
     }

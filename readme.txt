@@ -1,0 +1,1 @@
+The reason everything is written in the way it is because in C# I can use a Plugin system, each route and each middle ware will contain an action and are registered by plugins.

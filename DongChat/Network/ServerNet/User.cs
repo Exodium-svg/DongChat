@@ -8,13 +8,11 @@ namespace Common.Network.ServerNet
 {
     public class MessageReceivedEventArgs : EventArgs
     {
-        public User User { get; set; }
         public Header Header { get; set; }
         public ReadOnlyMemory<byte> Data { get; set; }
 
-        public MessageReceivedEventArgs(User user, Header header, ReadOnlyMemory<byte> data)
+        public MessageReceivedEventArgs(Header header, ReadOnlyMemory<byte> data)
         {
-            User = user;
             Header = header;
             Data = data;
         }
@@ -22,7 +20,6 @@ namespace Common.Network.ServerNet
     public class User
     {
         protected static readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Shared;
-
 
         readonly Socket _remoteSocket;
         readonly NetworkStream _remoteStream;
@@ -36,7 +33,7 @@ namespace Common.Network.ServerNet
             _remoteStream = new NetworkStream(remoteSocket, false);
         }
 
-        public void Send(PacketType type, scoped Span<byte> buffer)
+        public void Send(PacketType type, ReadOnlyMemory<byte> buffer)
         {
             Header header = new Header(buffer.Length, type, 0, 0);
 
@@ -45,7 +42,7 @@ namespace Common.Network.ServerNet
             Span<byte> packetBuffer = totalSize > 1024 ? new byte[totalSize] : stackalloc byte[totalSize];
             MemoryMarshal.Write(packetBuffer, in header);
 
-            buffer.CopyTo(packetBuffer.Slice(Marshal.SizeOf(header), buffer.Length));
+            buffer.Span.CopyTo(packetBuffer.Slice(Marshal.SizeOf(header), buffer.Length));
 
             _remoteSocket.Send(packetBuffer);
         }
@@ -78,11 +75,12 @@ namespace Common.Network.ServerNet
         {
             User user = (User)e.UserToken!; // we always fill it
 
+            // Header should always be sent fully at once, or you will be disconnected.
             if (e.BytesTransferred < Marshal.SizeOf<Header>() && e.SocketError != SocketError.Success)
             {
 
                 // something went wrong? --> check for errors
-                
+                Close();
                 return;
             }
 
@@ -95,6 +93,8 @@ namespace Common.Network.ServerNet
             }
 
             byte[] rentedBuffer = _arrayPool.Rent(header.Size);
+
+            //Shouldn't use the stack Justification: A thread has a maximum memory bandwith of 1MB by default UP to 4MB if setup correctly.
             //Span<byte> buffer = header.Size > STACK_THRESH_HOLD ? new byte[header.Size] : stackalloc byte[header.Size];
 
             try
@@ -108,7 +108,7 @@ namespace Common.Network.ServerNet
             }
 
             // we make a defensive copy, sigh.... TODO: rewrite this function, as it is doodoo
-            MessageReceived?.Invoke(null, new MessageReceivedEventArgs(user, header, rentedBuffer.ToArray()));
+            MessageReceived?.Invoke(user, new MessageReceivedEventArgs(header, rentedBuffer.ToArray()));
 
             _arrayPool.Return(rentedBuffer);
             OnMessage(sender, e);
